@@ -52,7 +52,7 @@ private[kafka010] class KafkaSourceProvider extends DataSourceRegister
     with Logging {
   import KafkaSourceProvider._
 
-  override def shortName(): String = "kafka"
+  override def shortName(): String = "kafkaCustom"
 
   /**
    * Returns the name and schema of the source. In addition, it also verifies whether the options
@@ -78,7 +78,8 @@ private[kafka010] class KafkaSourceProvider extends DataSourceRegister
     // Each running query should use its own group id. Otherwise, the query may be only assigned
     // partial data since Kafka will assign partitions to multiple consumers having the same group
     // id. Hence, we should generate a unique id for each query.
-    val uniqueGroupId = s"spark-kafka-source-${UUID.randomUUID}-${metadataPath.hashCode}"
+    // val uniqueGroupId = s"spark-kafka-source-${UUID.randomUUID}-${metadataPath.hashCode}"
+    val uniqueGroupId = streamingUniqueGroupId(parameters, metadataPath)
 
     val caseInsensitiveParams = parameters.map { case (k, v) => (k.toLowerCase(Locale.ROOT), v) }
     val specifiedKafkaParams =
@@ -121,7 +122,8 @@ private[kafka010] class KafkaSourceProvider extends DataSourceRegister
     // Each running query should use its own group id. Otherwise, the query may be only assigned
     // partial data since Kafka will assign partitions to multiple consumers having the same group
     // id. Hence, we should generate a unique id for each query.
-    val uniqueGroupId = s"spark-kafka-source-${UUID.randomUUID}-${metadataPath.hashCode}"
+    //val uniqueGroupId = s"spark-kafka-source-${UUID.randomUUID}-${metadataPath.hashCode}"
+    val uniqueGroupId = streamingUniqueGroupId(parameters, metadataPath)
 
     val caseInsensitiveParams = parameters.map { case (k, v) => (k.toLowerCase(Locale.ROOT), v) }
     val specifiedKafkaParams =
@@ -162,7 +164,8 @@ private[kafka010] class KafkaSourceProvider extends DataSourceRegister
     // Each running query should use its own group id. Otherwise, the query may be only assigned
     // partial data since Kafka will assign partitions to multiple consumers having the same group
     // id. Hence, we should generate a unique id for each query.
-    val uniqueGroupId = s"spark-kafka-source-${UUID.randomUUID}-${metadataPath.hashCode}"
+    // val uniqueGroupId = s"spark-kafka-source-${UUID.randomUUID}-${metadataPath.hashCode}"
+    val uniqueGroupId = streamingUniqueGroupId(parameters, metadataPath)
 
     val caseInsensitiveParams = parameters.map { case (k, v) => (k.toLowerCase(Locale.ROOT), v) }
     val specifiedKafkaParams =
@@ -558,6 +561,14 @@ private[kafka010] object KafkaSourceProvider extends Logging {
       }
       this
     }
+
+  private def streamingUniqueGroupId(
+      parameters: Map[String, String],
+      metadataPath: String): String = {
+    val groupIdPrefix = parameters
+      .getOrElse(GROUP_ID_PREFIX, "spark-kafka-source")
+    s"${groupIdPrefix}-${UUID.randomUUID}-${metadataPath.hashCode}"
+  }
 
     def build(): ju.Map[String, Object] = map
   }
